@@ -31,6 +31,20 @@ The project includes multiple RL agents and exploration policies for comparing l
 
 ---
 
+## 📸 Screenshots
+
+### Q-Learning Agent
+
+![Q-Learning Screenshot](docs/qlearning.png)
+
+---
+
+### SARSA Agent
+
+![SARSA Screenshot](docs/sarsa.png)
+
+---
+
 ## Reinforcement Learning Concepts Used
 
 - **Q-Learning**
