@@ -494,7 +494,7 @@ class MazeApp:
 
         # ── Parameters ─────────────────────────────────────
         self._sec(pf, "PARAMETERS")
-        self._slider(pf, "Episodes",      self.episodes_var, 10, 200, 10)
+        self._slider(pf, "Episodes",      self.episodes_var, 1, 200, 10)
         self._slider(pf, "Step delay(s)", self.speed_var,   0.0, 0.3, 0.01)
 
         self._div(pf)
