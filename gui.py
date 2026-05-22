@@ -328,7 +328,7 @@ class SplashScreen:
 class MazeApp:
     """Main application window."""
 
-    CELL = 38   # px per maze cell
+    CELL = 28   # تقليل حجم الخلية للشاشات الصغيرة
 
     def __init__(self, root: tk.Tk):
         self.root = root
@@ -347,9 +347,9 @@ class MazeApp:
         self.algo_var        = tk.StringVar(value="Q-Learning")
         self.episodes_var    = tk.IntVar(value=50)
         self.speed_var       = tk.DoubleVar(value=0.05)
-        self.trained_agent   = None   # keep last trained agent for policy arrows
-        self.best_rl_steps   = None   # best episode step count after training
-        self.astar           = AStarAgent(self.env)  # A* solver instance
+        self.trained_agent   = None
+        self.best_rl_steps   = None
+        self.astar           = AStarAgent(self.env)
 
         # ── Build layout ──────────────────────────────────────
         self._build_header()
@@ -373,7 +373,7 @@ class MazeApp:
 
         try:
             raw = self.env.unwrapped
-            
+
             # 1. Grab maze_cells directly from the unwrapped environment
             if hasattr(raw, "maze_cells"):
                 self.maze_cells = raw.maze_cells
@@ -384,62 +384,62 @@ class MazeApp:
             for attr in ("goal", "goal_pos", "target", "objective_position"):
                 if hasattr(raw, attr):
                     g = getattr(raw, attr)
-                    self.goal = [int(g[0]), int(g[1])]  # Ensure it is [row, col]
+                    self.goal = [int(g[0]), int(g[1])]
                     break
 
-            # 2. Prioritize static start position over the constantly updating 'state'
+            # 2. Prioritize static start position
             for attr in ("player_marker_start_pos", "init_pos", "robot_pos", "state"):
                 if hasattr(raw, attr):
                     s = getattr(raw, attr)
-                    self.agent_start = [int(s[1]), int(s[0])]  # Swap env's [col, row] to [row, col]
+                    self.agent_start = [int(s[1]), int(s[0])]
                     break
         except Exception:
             pass
 
     # ── Header ────────────────────────────────────────────────
     def _build_header(self):
-        hf = tk.Frame(self.root, bg=PANEL, pady=10)
+        hf = tk.Frame(self.root, bg=PANEL, pady=4)
         hf.pack(fill="x")
 
         tk.Label(
             hf,
             text="⬡  MAZE SOLVER — REINFORCEMENT LEARNING",
             bg=PANEL, fg=TEXT,
-            font=("Courier New", 15, "bold")
+            font=("Courier New", 13, "bold")
         ).pack()
 
         # Team names row
         tf = tk.Frame(hf, bg=PANEL)
-        tf.pack(pady=(6, 2))
+        tf.pack(pady=(2, 1))
         tk.Label(tf, text="Our Team : ",
                  bg=PANEL, fg=MUTED,
-                 font=("Courier New", 8)).pack(side="left")
+                 font=("Courier New", 7)).pack(side="left")
         for i, (name, clr) in enumerate(TEAM):
             tk.Label(tf, text=name,
                      bg=PANEL, fg=clr,
-                     font=("Courier New", 8, "bold")
+                     font=("Courier New", 7, "bold")
                      ).pack(side="left")
             if i < len(TEAM) - 1:
                 tk.Label(tf, text="  |  ",
                          bg=PANEL, fg=BORDER,
-                         font=("Courier New", 8)
+                         font=("Courier New", 7)
                          ).pack(side="left")
 
         tk.Label(
             hf,
             text="Under Supervision of  Dr. Sara Khalil",
             bg=PANEL, fg=MUTED,
-            font=("Courier New", 8, "italic")
+            font=("Courier New", 7, "italic")
         ).pack()
 
         # Accent line below header
-        tk.Canvas(self.root, height=2, bg=GLOW,
+        tk.Canvas(self.root, height=1, bg=GLOW,
                   highlightthickness=0).pack(fill="x")
 
     # ── Body ──────────────────────────────────────────────────
     def _build_body(self):
         body = tk.Frame(self.root, bg=BG)
-        body.pack(fill="both", expand=True, padx=14, pady=12)
+        body.pack(fill="both", expand=True, padx=8, pady=6)
         self._build_maze_panel(body)
         self._build_right_panel(body)
 
@@ -450,14 +450,14 @@ class MazeApp:
 
         # Label above canvas
         lf = tk.Frame(parent, bg=BG)
-        lf.pack(side="left", anchor="n", padx=(0, 14))
+        lf.pack(side="left", anchor="n", padx=(0, 8))
 
         tk.Label(lf, text="MAZE  ENVIRONMENT",
                  bg=BG, fg=MUTED,
-                 font=("Courier New", 8, "bold")).pack(anchor="w", pady=(0, 4))
+                 font=("Courier New", 7, "bold")).pack(anchor="w", pady=(0, 2))
 
         # Canvas wrap with glow border
-        wrap = tk.Frame(lf, bg=GLOW, padx=2, pady=2)
+        wrap = tk.Frame(lf, bg=GLOW, padx=1, pady=1)
         wrap.pack()
 
         inner = tk.Frame(wrap, bg=CARD)
@@ -469,23 +469,23 @@ class MazeApp:
 
     # ── Right control panel ───────────────────────────────────
     def _build_right_panel(self, parent):
-        pf = tk.Frame(parent, bg=BG, width=290)
+        pf = tk.Frame(parent, bg=BG, width=250)
         pf.pack(side="left", fill="y")
         pf.pack_propagate(False)
 
         # ── Algorithm ──────────────────────────────────────
         self._sec(pf, "ALGORITHM")
         for algo, clr in ALGO_COLOR.items():
-            row = tk.Frame(pf, bg=CARD, pady=5, padx=10,
+            row = tk.Frame(pf, bg=CARD, pady=2, padx=6,
                            highlightbackground=BORDER,
                            highlightthickness=1)
-            row.pack(fill="x", pady=2)
+            row.pack(fill="x", pady=1)
             tk.Radiobutton(
                 row, text=algo,
                 variable=self.algo_var, value=algo,
                 bg=CARD, fg=clr, selectcolor=BG,
                 activebackground=CARD,
-                font=("Courier New", 10, "bold"),
+                font=("Courier New", 9, "bold"),
                 relief="flat", indicatoron=1,
                 highlightthickness=0
             ).pack(anchor="w")
@@ -501,7 +501,7 @@ class MazeApp:
 
         # ── Live stats ──────────────────────────────────────
         self._sec(pf, "LIVE STATISTICS")
-        stat = tk.Frame(pf, bg=CARD, padx=10, pady=8,
+        stat = tk.Frame(pf, bg=CARD, padx=6, pady=4,
                         highlightbackground=BORDER,
                         highlightthickness=1)
         stat.pack(fill="x")
@@ -514,19 +514,19 @@ class MazeApp:
 
         # ── Buttons ──────────────────────────────────────────
         self.btn_start = tk.Button(
-            pf, text="▶   START  TRAINING",
+            pf, text="▶ START",
             bg=GREEN, fg=BG,
-            font=("Courier New", 11, "bold"),
-            relief="flat", pady=9, cursor="hand2",
+            font=("Courier New", 10, "bold"),
+            relief="flat", pady=5, cursor="hand2",
             activebackground="#00cc70",
             command=self._start_training)
-        self.btn_start.pack(fill="x", pady=(0, 4))
+        self.btn_start.pack(fill="x", pady=(0, 2))
 
         self.btn_stop = tk.Button(
-            pf, text="■   STOP",
+            pf, text="■ STOP",
             bg=CARD, fg=PINK,
-            font=("Courier New", 11, "bold"),
-            relief="flat", pady=9, cursor="hand2",
+            font=("Courier New", 10, "bold"),
+            relief="flat", pady=5, cursor="hand2",
             state="disabled",
             activebackground=CARD,
             command=self._stop_training)
@@ -536,7 +536,7 @@ class MazeApp:
 
         # ── Reward chart ─────────────────────────────────────
         self._sec(pf, "REWARD CHART")
-        self.chart = tk.Canvas(pf, bg=CARD, height=65,  # تم تقليل الارتفاع من 100 إلى 65
+        self.chart = tk.Canvas(pf, bg=CARD, height=50,
                                highlightbackground=BORDER,
                                highlightthickness=1)
         self.chart.pack(fill="x")
@@ -544,8 +544,8 @@ class MazeApp:
         self._div(pf)
 
         # ── A* Comparison ────────────────────────────────────
-        self._sec(pf, "A*  vs  RL  COMPARISON")
-        cmp_card = tk.Frame(pf, bg=CARD, padx=10, pady=8,
+        self._sec(pf, "A* vs RL")
+        cmp_card = tk.Frame(pf, bg=CARD, padx=6, pady=4,
                             highlightbackground=BORDER,
                             highlightthickness=1)
         cmp_card.pack(fill="x")
@@ -554,72 +554,72 @@ class MazeApp:
         self.lbl_efficiency  = self._stat(cmp_card, "RL / A*",   "—")
 
         btn_row = tk.Frame(pf, bg=BG)
-        btn_row.pack(fill="x", pady=(6, 0))
+        btn_row.pack(fill="x", pady=(4, 0))
 
         self.btn_astar = tk.Button(
-            btn_row, text="⬡  SHOW  A*  PATH",
+            btn_row, text="⬡ A* PATH",
             bg=CARD, fg=GLOW,
-            font=("Courier New", 9, "bold"),
-            relief="flat", pady=6, cursor="hand2",
+            font=("Courier New", 8, "bold"),
+            relief="flat", pady=4, cursor="hand2",
             highlightbackground=GLOW, highlightthickness=1,
             command=self._run_astar)
-        self.btn_astar.pack(side="left", fill="x", expand=True, padx=(0, 3))
+        self.btn_astar.pack(side="left", fill="x", expand=True, padx=(0, 2))
 
         self.btn_arrows = tk.Button(
-            btn_row, text="⬡  POLICY  ARROWS",
+            btn_row, text="⬡ POLICY",
             bg=CARD, fg=ORANGE,
-            font=("Courier New", 9, "bold"),
-            relief="flat", pady=6, cursor="hand2",
+            font=("Courier New", 8, "bold"),
+            relief="flat", pady=4, cursor="hand2",
             highlightbackground=ORANGE, highlightthickness=1,
             state="disabled",
             command=self._draw_policy_arrows)
-        self.btn_arrows.pack(side="left", fill="x", expand=True, padx=(3, 0))
+        self.btn_arrows.pack(side="left", fill="x", expand=True, padx=(2, 0))
 
     # ── Footer ────────────────────────────────────────────────
     def _build_footer(self):
-        tk.Canvas(self.root, height=2, bg=GLOW,
+        tk.Canvas(self.root, height=1, bg=GLOW,
                   highlightthickness=0).pack(fill="x")
-        ff = tk.Frame(self.root, bg=PANEL, pady=5)
+        ff = tk.Frame(self.root, bg=PANEL, pady=3)
         ff.pack(fill="x")
         tk.Label(
             ff,
-            text="Reinforcement Learning Maze Solver   •   AI Course   •   2026",
+            text="RL Maze Solver • AI Course • 2026",
             bg=PANEL, fg=MUTED,
-            font=("Courier New", 8)
+            font=("Courier New", 7)
         ).pack()
 
     # ── Widget helpers ────────────────────────────────────────
     def _sec(self, parent, title):
         tk.Label(parent, text=title,
                  bg=BG, fg=MUTED,
-                 font=("Courier New", 7, "bold")
-                 ).pack(anchor="w", pady=(6, 2))
+                 font=("Courier New", 6, "bold")
+                 ).pack(anchor="w", pady=(4, 1))
 
     def _div(self, parent):
         tk.Canvas(parent, height=1, bg=BORDER,
-                  highlightthickness=0).pack(fill="x", pady=4) # تم تقليل pady من 8 إلى 4
+                  highlightthickness=0).pack(fill="x", pady=2)
 
     def _slider(self, parent, label, var, lo, hi, res):
         f = tk.Frame(parent, bg=BG)
-        f.pack(fill="x", pady=2)
+        f.pack(fill="x", pady=1)
         tk.Label(f, text=label, bg=BG, fg=TEXT,
-                 font=("Courier New", 8), width=13,
+                 font=("Courier New", 7), width=12,
                  anchor="w").pack(side="left")
         tk.Label(f, textvariable=var, bg=BG, fg=GLOW,
-                 font=("Courier New", 8, "bold"), width=5
+                 font=("Courier New", 7, "bold"), width=4
                  ).pack(side="right")
         ttk.Scale(f, from_=lo, to=hi, variable=var,
                   orient="horizontal"
-                  ).pack(side="left", fill="x", expand=True, padx=4)
+                  ).pack(side="left", fill="x", expand=True, padx=2)
 
     def _stat(self, parent, label, init):
         f = tk.Frame(parent, bg=CARD)
-        f.pack(fill="x", pady=1)
+        f.pack(fill="x", pady=0)
         tk.Label(f, text=f"{label}:", bg=CARD, fg=MUTED,
-                 font=("Courier New", 8), width=9,
+                 font=("Courier New", 7), width=8,
                  anchor="w").pack(side="left")
         lbl = tk.Label(f, text=init, bg=CARD, fg=TEXT,
-                       font=("Courier New", 9, "bold"))
+                       font=("Courier New", 8, "bold"))
         lbl.pack(side="left")
         return lbl
 
@@ -635,8 +635,7 @@ class MazeApp:
                 x0, y0 = col * CELL, row * CELL
                 x1, y1 = x0 + CELL, y0 + CELL
 
-                # Checkerboard cell colour
-                if [row + 1, col + 1] == self.goal:  # Add 1 to align with env coords
+                if [row + 1, col + 1] == self.goal:
                     fill = "#0d2010"
                 else:
                     fill = CELL_C if (row + col) % 2 == 0 else CELL_ALT
@@ -645,10 +644,9 @@ class MazeApp:
                                    fill=fill, outline="",
                                    tags="maze")
 
-                # Walls
                 if self.has_walls and self.maze_cells is not None:
-                    v  = int(self.maze_cells[row + 1][col + 1]) # Shift by 1 to skip outer wall
-                    ww = 3
+                    v  = int(self.maze_cells[row + 1][col + 1])
+                    ww = 2
                     if not (v & OPEN_N):
                         c.create_line(x0, y0, x1, y0,
                                       fill=WALL_C, width=ww, tags="maze")
@@ -669,17 +667,16 @@ class MazeApp:
 
         # Outer border glow
         c.create_rectangle(0, 0, W*CELL - 1, H*CELL - 1,
-                           outline=GLOW, width=2, tags="maze")
+                           outline=GLOW, width=1, tags="maze")
 
         # Goal marker
-        # Goal marker
         gr, gc = self.goal
-        gx = (gc - 1) * CELL + CELL // 2  # Subtract 1 for GUI
-        gy = (gr - 1) * CELL + CELL // 2  # Subtract 1 for GUI
+        gx = (gc - 1) * CELL + CELL // 2
+        gy = (gr - 1) * CELL + CELL // 2
         r  = CELL // 3
         c.create_oval(gx-r, gy-r, gx+r, gy+r,
                       fill="#0d3018", outline=GREEN,
-                      width=2, tags="maze")
+                      width=1, tags="maze")
         c.create_text(gx, gy, text="★",
                       fill=YELLOW,
                       font=("Courier New", int(CELL * 0.35), "bold"),
@@ -689,25 +686,21 @@ class MazeApp:
         c    = self.canvas
         CELL = self.CELL
         c.delete("agent")
-        cx = (col - 1) * CELL + CELL // 2  # Subtract 1
-        cy = (row - 1) * CELL + CELL // 2  # Subtract 1
+        cx = (col - 1) * CELL + CELL // 2
+        cy = (row - 1) * CELL + CELL // 2
         r  = CELL // 3
         clr = ALGO_COLOR.get(self.algo_var.get(), GLOW)
 
-        # Outer glow ring (large, faint)
-        c.create_oval(cx-r-7, cy-r-7, cx+r+7, cy+r+7,
+        c.create_oval(cx-r-5, cy-r-5, cx+r+5, cy+r+5,
                       fill="", outline=dim_color(clr, 0.75),
-                      width=4, tags="agent")
-        # Mid ring
-        c.create_oval(cx-r-2, cy-r-2, cx+r+2, cy+r+2,
+                      width=3, tags="agent")
+        c.create_oval(cx-r-1, cy-r-1, cx+r+1, cy+r+1,
                       fill="", outline=dim_color(clr, 0.45),
-                      width=2, tags="agent")
-        # Solid body
+                      width=1, tags="agent")
         c.create_oval(cx-r, cy-r, cx+r, cy+r,
                       fill=clr, outline="white",
                       width=1, tags="agent")
-        # Centre dot
-        c.create_oval(cx-4, cy-4, cx+4, cy+4,
+        c.create_oval(cx-3, cy-3, cx+3, cy+3,
                       fill="white", outline="",
                       tags="agent")
 
@@ -724,7 +717,7 @@ class MazeApp:
         self.btn_start.config(state="disabled")
         self.btn_stop.config(state="normal")
         self.lbl_status.config(text="Training…", fg=GREEN)
-        self._draw_maze()   # fresh maze
+        self._draw_maze()
 
         threading.Thread(target=self._train_thread,
                          daemon=True).start()
@@ -748,17 +741,13 @@ class MazeApp:
 
         self.env.initialize_env()
 
-        # --- ADD THESE TWO LINES ---
-        # Update the GUI's memory to match the newly generated maze layout
+        # تحديث الـ maze بعد إعادة التوليد
         self._detect_maze()
         self.root.after(0, self._draw_maze)
-        # ---------------------------
 
         for ep in range(episodes):
             if self.stop_flag:
                 break
-            
-            # ... [rest of your loop remains identical] ...
 
             state, reward, done, _ = self.env.reset()
             total_reward = reward
@@ -769,7 +758,6 @@ class MazeApp:
                 action = agent.choose_action(state)
 
             while not done and not self.stop_flag:
-                # Parse position
                 try:
                     pos = list(np.array(state).flatten())
                     row, col = int(pos[0]), int(pos[1])
@@ -778,7 +766,6 @@ class MazeApp:
 
                 self.root.after(0, self._draw_agent, row, col)
 
-                # Step each algorithm
                 if algo == "SARSA":
                     ns, r, done, _ = self.env.step(action)
                     na = agent.choose_action(ns)
@@ -797,7 +784,6 @@ class MazeApp:
                 total_reward += r
                 steps        += 1
 
-                # Update labels safely
                 ep_txt = f"{ep + 1} / {episodes}"
                 rw_txt = f"{total_reward:.2f}"
                 st_txt = str(steps)
@@ -810,19 +796,16 @@ class MazeApp:
 
                 time.sleep(delay)
 
-            # PG end-of-episode update
             if algo == "Policy Gradient (REINFORCE)" and pg_buffer:
                 agent.learn(pg_buffer)
 
             self.episode_rewards.append(total_reward)
 
-            # Track best steps (shortest episode = most learned)
             if done and (self.best_rl_steps is None or steps < self.best_rl_steps):
                 self.best_rl_steps = steps
 
             self.root.after(0, self._update_chart)
 
-        # Save agent for policy arrows
         self.trained_agent = agent
         self.training = False
         self.root.after(0, self._training_done)
@@ -835,15 +818,12 @@ class MazeApp:
         else:
             self.lbl_status.config(text="Complete ✓", fg=GREEN)
 
-        # Enable policy arrows for tabular agents
         algo = self.algo_var.get()
         if algo in ("Q-Learning", "SARSA"):
             self.btn_arrows.config(state="normal")
 
-        # Update RL best in comparison panel
         if self.best_rl_steps is not None:
             self.lbl_rl_best.config(text=str(self.best_rl_steps), fg=GREEN)
-            # Compute efficiency ratio if A* already ran
             astar_steps = self.astar.steps
             if astar_steps > 0:
                 ratio = self.best_rl_steps / astar_steps
@@ -854,9 +834,11 @@ class MazeApp:
     # ── A* Pathfinding ────────────────────────────────────────
     def _run_astar(self):
         """Run A* and overlay its path on the maze canvas."""
-        self.astar._detect_maze()
+        # ═══ التعديل المهم: تحديث A* بالـ maze الحالي ═══
+        self.astar.env = self.env  # تحديث الـ environment
+        self.astar._detect_maze()  # إعادة كشف الـ maze
 
-        # Use current state as start if training ran; else use detected start
+        # تحديث الـ start position بالموقع الحالي للـ agent
         start = self.agent_start
         goal  = self.goal
 
@@ -868,13 +850,11 @@ class MazeApp:
 
         self.lbl_astar_steps.config(text=str(self.astar.steps), fg=GLOW)
 
-        # Update efficiency ratio if RL training finished
         if self.best_rl_steps is not None:
             ratio = self.best_rl_steps / max(self.astar.steps, 1)
             color = GREEN if ratio <= 1.5 else (ORANGE if ratio <= 3 else PINK)
             self.lbl_efficiency.config(text=f"{ratio:.2f}x", fg=color)
 
-        # Redraw maze fresh then overlay A* path
         self._draw_maze()
         self._draw_astar_path(path)
 
@@ -887,54 +867,44 @@ class MazeApp:
         if len(path) < 2:
             return
 
-        # Draw each cell in the path (skip start and goal)
         for i, (row, col) in enumerate(path):
-            cx = (col - 1) * CELL + CELL // 2  # Subtract 1 for GUI
-            cy = (row - 1) * CELL + CELL // 2  # Subtract 1 for GUI
+            cx = (col - 1) * CELL + CELL // 2
+            cy = (row - 1) * CELL + CELL // 2
 
-            # Skip goal cell (already drawn as star)
             if [row, col] == self.goal:
                 continue
 
-            # Cell highlight (Subtract 1 for GUI)
-            x0, y0 = (col - 1) * CELL + 4, (row - 1) * CELL + 4
-            x1, y1 = x0 + CELL - 8,  y0 + CELL - 8
+            x0, y0 = (col - 1) * CELL + 3, (row - 1) * CELL + 3
+            x1, y1 = x0 + CELL - 6,  y0 + CELL - 6
             c.create_rectangle(x0, y0, x1, y1,
                                fill=dim_color(GLOW, 0.70),
                                outline=GLOW,
                                width=1, tags="astar")
 
-            # Step number
             c.create_text(cx, cy,
                           text=str(i),
                           fill=GLOW,
                           font=("Courier New", int(CELL * 0.22), "bold"),
                           tags="astar")
 
-        # Draw connecting line (Subtract 1 for GUI)
         pts = []
         for row, col in path:
             pts.extend([(col - 1) * CELL + CELL // 2,
                         (row - 1) * CELL + CELL // 2])
         if len(pts) >= 4:
             c.create_line(*pts,
-                          fill=GLOW, width=2,
-                          dash=(6, 3), smooth=True,
+                          fill=GLOW, width=1,
+                          dash=(4, 2), smooth=True,
                           tags="astar")
 
-        # Legend label
-        c.create_text(6, 6,
+        c.create_text(4, 4,
                       text=f"A*: {self.astar.steps} steps",
                       fill=GLOW,
-                      font=("Courier New", 8, "bold"),
+                      font=("Courier New", 7, "bold"),
                       anchor="nw", tags="astar")
 
     # ── Policy Arrows ─────────────────────────────────────────
     def _draw_policy_arrows(self):
-        """
-        Overlay arrows on each maze cell showing the greedy
-        action from the trained Q-table (Q-Learning or SARSA).
-        """
         agent = self.trained_agent
         if agent is None or not hasattr(agent, "get_q_value"):
             return
@@ -943,23 +913,21 @@ class MazeApp:
         CELL = self.CELL
         c.delete("arrows")
 
-        # Action index → (delta_row, delta_col, arrow_symbol)
         ACTION_MAP = {
-            0: (-1,  0, "↑"),   # up
-            1: ( 1,  0, "↓"),   # down
-            2: ( 0, -1, "←"),   # left
-            3: ( 0,  1, "→"),   # right
+            0: (-1,  0, "↑"),
+            1: ( 1,  0, "↓"),
+            2: ( 0, -1, "←"),
+            3: ( 0,  1, "→"),
         }
 
         clr = ALGO_COLOR.get(self.algo_var.get(), GLOW)
 
         for row in range(self.MAZE_H):
             for col in range(self.MAZE_W):
-                # Skip walls
                 if self.maze_cells is not None:
                     if self.maze_cells[row + 1][col + 1] == 0:
                         continue
-                    
+
                 if [row + 1, col + 1] == self.goal:
                     continue
 
@@ -967,7 +935,6 @@ class MazeApp:
                 actions = list(range(self.env.get_action_space().n))
                 q_vals  = [agent.get_q_value(state, a) for a in actions]
 
-                # Skip cells with all-zero Q (never visited)
                 if max(abs(v) for v in q_vals) < 1e-6:
                     continue
 
@@ -984,11 +951,10 @@ class MazeApp:
                                     int(CELL * 0.32), "bold"),
                               tags="arrows")
 
-        # Legend
-        c.create_text(self.MAZE_W * CELL - 6, 6,
+        c.create_text(self.MAZE_W * CELL - 4, 4,
                       text="Policy ↑↓←→",
                       fill=clr,
-                      font=("Courier New", 8, "bold"),
+                      font=("Courier New", 7, "bold"),
                       anchor="ne", tags="arrows")
 
     # ── Reward chart ──────────────────────────────────────────
@@ -1005,7 +971,7 @@ class MazeApp:
         mn, mx = min(rewards), max(rewards)
         if mx == mn:
             mx = mn + 1.0
-        PAD = 10
+        PAD = 6
 
         def px(i):
             return PAD + (i / (len(rewards) - 1)) * (W - 2*PAD)
@@ -1016,35 +982,31 @@ class MazeApp:
         clr  = ALGO_COLOR.get(self.algo_var.get(), GLOW)
         pts  = [(px(i), py(v)) for i, v in enumerate(rewards)]
 
-        # Gradient fill (simulate with polygon)
         poly = [(PAD, H-PAD)] + pts + [(W-PAD, H-PAD)]
         c.create_polygon(
             [coord for p in poly for coord in p],
             fill=dim_color(clr, 0.82), outline="")
 
-        # Line
         for i in range(len(pts) - 1):
             c.create_line(*pts[i], *pts[i+1],
-                          fill=clr, width=2, smooth=True)
+                          fill=clr, width=1, smooth=True)
 
-        # Current point dot
-        c.create_oval(pts[-1][0]-4, pts[-1][1]-4,
-                      pts[-1][0]+4, pts[-1][1]+4,
+        c.create_oval(pts[-1][0]-3, pts[-1][1]-3,
+                      pts[-1][0]+3, pts[-1][1]+3,
                       fill=clr, outline="white")
 
-        # Labels
-        c.create_text(W - 4, 6,
+        c.create_text(W - 2, 4,
                       text=f"max {mx:.1f}",
-                      fill=MUTED, font=("Courier New", 7),
+                      fill=MUTED, font=("Courier New", 6),
                       anchor="ne")
-        c.create_text(W - 4, H - 6,
+        c.create_text(W - 2, H - 4,
                       text=f"min {mn:.1f}",
-                      fill=MUTED, font=("Courier New", 7),
+                      fill=MUTED, font=("Courier New", 6),
                       anchor="se")
-        c.create_text(4, H // 2,
+        c.create_text(2, H // 2,
                       text=f"{rewards[-1]:.1f}",
                       fill=clr,
-                      font=("Courier New", 9, "bold"),
+                      font=("Courier New", 8, "bold"),
                       anchor="w")
 
 
@@ -1053,24 +1015,27 @@ def main():
     root = tk.Tk()
     root.withdraw()
 
-    # Style ttk sliders
     style = ttk.Style(root)
     style.theme_use("clam")
     style.configure("Horizontal.TScale",
                     background=BG,
                     troughcolor=CARD,
-                    sliderlength=14,
-                    sliderwidth=14)
+                    sliderlength=12,
+                    sliderwidth=12)
 
     def launch():
         root.deiconify()
-        
-        # --- التعديل هنا: تكبير الشاشة لتملأ العرض والطول ---
-        try:
-            root.state('zoomed')  # لمستخدمي نظام Windows
-        except tk.TclError:
-            root.attributes('-zoomed', True)  # لمستخدمي أنظمة Linux/Mac
-        # ---------------------------------------------------
+
+        screen_w = root.winfo_screenwidth()
+        screen_h = root.winfo_screenheight()
+
+        w = int(screen_w * 0.95)
+        h = int(screen_h * 0.90)
+        x = (screen_w - w) // 2
+        y = (screen_h - h) // 2
+
+        root.geometry(f"{w}x{h}+{x}+{y}")
+        root.minsize(800, 600)
 
         MazeApp(root)
         root.lift()
