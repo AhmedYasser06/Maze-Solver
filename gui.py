@@ -1,15 +1,4 @@
 #!/usr/bin/env python3
-"""
-╔══════════════════════════════════════════════════════════════╗
-║       MAZE SOLVER — REINFORCEMENT LEARNING GUI               ║
-║                                                              ║
-║  Team: Ahmed Maged Motea  |  Hassan Mohammed                 ║
-║        Ahmed Yasser        |  Saher Ayman                    ║
-║        Abdulrahman Al-Husseini                               ║
-║                                                              ║
-║  Under Supervision of  Dr. Sara Khalil                       ║
-╚══════════════════════════════════════════════════════════════╝
-"""
 
 from logging import root
 import tkinter as tk
